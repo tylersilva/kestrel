@@ -1,0 +1,34 @@
+name: Feature
+description: A new capability for Kestrel
+title: "feat: "
+labels: ["type:feature"]
+body:
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: What should exist when this is done? Describe the user-visible result, not the implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Bullet list the reviewer agent will verify against.
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - sim
+        - globe
+        - fleet
+        - infra
+        - dashboard
+    validations:
+      required: true

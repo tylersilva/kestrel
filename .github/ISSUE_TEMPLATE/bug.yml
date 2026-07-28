@@ -1,0 +1,23 @@
+name: Bug
+description: Something in Kestrel is broken
+title: "bug: "
+labels: ["type:bug"]
+body:
+  - type: textarea
+    id: observed
+    attributes:
+      label: What happens
+      description: Include steps to reproduce and what you saw (screenshots welcome).
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What should happen
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      placeholder: browser / OS / URL (prod, preview, local dev)
