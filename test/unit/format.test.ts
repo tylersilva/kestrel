@@ -11,9 +11,11 @@ import {
 
 describe("format helpers", () => {
 	it("formats USD cents compactly", () => {
-		expect(formatUsdCompact(123)).toBe("$1.2");
-		expect(formatUsdCompact(420_000_00)).toBe("$420K");
-		expect(formatUsdCompact(4_200_000_00)).toBe("$4.2M");
+		// Exact compact output varies by ICU version (Node 22 renders
+		// "$420.0K", Node 25 "$420K") — assert shape, not ICU quirks.
+		expect(formatUsdCompact(123)).toMatch(/^\$1\.2$/);
+		expect(formatUsdCompact(420_000_00)).toMatch(/^\$420(\.0)?K$/);
+		expect(formatUsdCompact(4_200_000_00)).toMatch(/^\$4\.2M$/);
 	});
 
 	it("formats local minor units per currency conventions", () => {
