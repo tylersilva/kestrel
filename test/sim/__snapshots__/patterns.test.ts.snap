@@ -1,0 +1,75 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`episode scheduler > locks the schedule for the first three acts 1`] = `
+[
+  [
+    {
+      "actIndex": 0,
+      "intensity": 2,
+      "originCity": "santiago",
+      "pattern": "card_testing",
+      "seed": 462312013,
+      "startBucket": 51,
+      "targetCity": "tokyo",
+    },
+    {
+      "actIndex": 0,
+      "intensity": 1,
+      "originCity": "shanghai",
+      "pattern": "account_takeover",
+      "seed": 1471912470,
+      "startBucket": 51,
+      "targetCity": "dublin",
+    },
+  ],
+  [
+    {
+      "actIndex": 1,
+      "intensity": 1,
+      "originCity": "melbourne",
+      "pattern": "account_takeover",
+      "seed": 3701360511,
+      "startBucket": 147,
+      "targetCity": "dc",
+    },
+    {
+      "actIndex": 1,
+      "intensity": 1,
+      "originCity": "milan",
+      "pattern": "mule_fanout",
+      "seed": 3541992744,
+      "startBucket": 144,
+      "targetCity": "la",
+    },
+    {
+      "actIndex": 1,
+      "intensity": 1,
+      "originCity": "seattle",
+      "pattern": "account_takeover",
+      "seed": 3203140127,
+      "startBucket": 173,
+      "targetCity": "paris",
+    },
+  ],
+  [
+    {
+      "actIndex": 2,
+      "intensity": 1,
+      "originCity": "dallas",
+      "pattern": "structuring",
+      "seed": 3894565748,
+      "startBucket": 247,
+      "targetCity": "jakarta",
+    },
+    {
+      "actIndex": 2,
+      "intensity": 1,
+      "originCity": "seoul",
+      "pattern": "structuring",
+      "seed": 97083806,
+      "startBucket": 270,
+      "targetCity": "taipei",
+    },
+  ],
+]
+`;
