@@ -1,7 +1,8 @@
 @import "tailwindcss";
 
 @theme {
-	/* Kestrel command-center palette (placeholder until the brand pass) */
+	/* Kestrel command-center palette — color encodes risk temperature:
+	   signal (cool, nominal) → warn (elevated) → alert (threshold crossed). */
 	--color-abyss: #06080d;
 	--color-panel: #0b0f17;
 	--color-line: #1a2233;
@@ -24,4 +25,42 @@ html {
 
 body {
 	@apply bg-abyss text-ink font-sans antialiased;
+}
+
+@layer components {
+	.panel {
+		@apply rounded-lg border border-line bg-panel;
+	}
+
+	/* The globe's future seat — a faint dotted mesh. */
+	.corridor-grid {
+		background-image: radial-gradient(
+			circle,
+			color-mix(in srgb, var(--color-line) 55%, transparent) 1px,
+			transparent 1px
+		);
+		background-size: 22px 22px;
+	}
+}
+
+@keyframes row-enter {
+	from {
+		opacity: 0;
+		transform: translateY(-3px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.row-enter {
+	animation: row-enter 240ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.row-enter,
+	.animate-pulse {
+		animation: none;
+	}
 }
