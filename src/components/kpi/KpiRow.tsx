@@ -41,7 +41,8 @@ export default function KpiRow() {
 	const phase = useSimStore((s) => s.phase);
 	const risk = useSimStore((s) => s.risk);
 
-	const syncing = phase === "connecting" || phase === "syncing";
+	// Never render zeros as if they were data — blank until genuinely live.
+	const syncing = phase !== "live";
 	const legit = kpi.txnCount - kpi.fraudCount;
 	const fpRate = legit > 0 ? kpi.falsePositives / legit : 0;
 	const detectionRate =

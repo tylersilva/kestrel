@@ -16,6 +16,12 @@ import {
 const MAX_BUCKETS_SPAN = 120; // 10 minutes of transactions
 const MAX_KPIS_SPAN = 240; // 20 minutes of aggregation
 
+/**
+ * Year-2100 horizon. Also the overflow guard: near 2^53, `b + 1 === b` and
+ * a bucket loop would spin until the CPU limit kills the isolate.
+ */
+const MAX_BUCKET = 820_488_960;
+
 type Range = { from: number; to: number };
 
 function parseRange(
@@ -23,13 +29,19 @@ function parseRange(
 	toRaw: string | undefined,
 	maxSpan: number,
 ): Range | string {
+	if (!fromRaw || !toRaw) {
+		return "from and to are required";
+	}
 	const from = Number(fromRaw);
 	const to = Number(toRaw);
-	if (!Number.isInteger(from) || !Number.isInteger(to)) {
+	if (!Number.isSafeInteger(from) || !Number.isSafeInteger(to)) {
 		return "from and to must be integer bucket indices";
 	}
 	if (from < 0 || to < from) {
 		return "range must satisfy 0 <= from <= to";
+	}
+	if (to > MAX_BUCKET) {
+		return "range is beyond the simulation horizon";
 	}
 	if (to - from + 1 > maxSpan) {
 		return `range must span at most ${maxSpan} buckets`;

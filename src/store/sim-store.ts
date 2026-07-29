@@ -89,6 +89,8 @@ interface SimStore {
 	setPhase(phase: SimPhase): void;
 	setSyncProgress(progress: number): void;
 	seedKpis(snapshot: KpiSnapshot): void;
+	/** UTC midnight rollover: "today" starts over for every viewer at once. */
+	resetDay(): void;
 	/**
 	 * Account a completed generation of bucket `bucketIndex`: KPI totals and
 	 * the risk series. Mirrors aggregateRange's accounting exactly, so any
@@ -113,6 +115,7 @@ export const useSimStore = create<SimStore>((set) => ({
 
 	setPhase: (phase) => set({ phase }),
 	setSyncProgress: (syncProgress) => set({ syncProgress }),
+	resetDay: () => set({ kpi: EMPTY_KPIS }),
 
 	seedKpis: (snapshot) =>
 		set({
@@ -181,17 +184,16 @@ export const useSimStore = create<SimStore>((set) => ({
 		}),
 
 	backfillDisplay: (buckets) =>
-		set((state) => {
+		set(() => {
+			// Reset, don't append — a re-boot must not duplicate risk points.
 			const all = buckets.flatMap((b) => b.txns);
 			const flagged = all.filter((t) => t.flagged);
-			const risk = [
-				...state.risk,
-				...buckets.map((b) => riskPointFor(b.bucketIndex, b.txns)),
-			].slice(-RISK_CAP);
 			return {
 				recent: all.slice(-RECENT_CAP).reverse(),
 				feed: flagged.slice(-FEED_CAP).reverse(),
-				risk,
+				risk: buckets
+					.map((b) => riskPointFor(b.bucketIndex, b.txns))
+					.slice(-RISK_CAP),
 			};
 		}),
 }));

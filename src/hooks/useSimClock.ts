@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export interface SimConfig {
 	seed: number;
@@ -55,5 +55,7 @@ export function useSimClock(): SimClock {
 
 	const now = useCallback(() => Date.now() + offsetRef.current, []);
 
-	return { config, failed, now };
+	// Stable identity: consumers put the clock in effect deps, and an
+	// unrelated re-render must not restart the simulation host.
+	return useMemo(() => ({ config, failed, now }), [config, failed, now]);
 }

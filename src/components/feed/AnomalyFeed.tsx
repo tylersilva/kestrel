@@ -1,16 +1,15 @@
 import {
 	corridorLabel,
 	formatLocalAmount,
+	formatUsdCompact,
 	formatUtcTime,
 	patternLabel,
-	riskTone,
 } from "../../lib/format.ts";
 import { useSimStore } from "../../store/sim-store.ts";
 
 const CHIP: Record<string, string> = {
 	alert: "border-alert/40 bg-alert/10 text-alert",
 	warn: "border-warn/40 bg-warn/10 text-warn",
-	signal: "border-signal/40 bg-signal/10 text-signal",
 };
 
 export default function AnomalyFeed() {
@@ -28,7 +27,8 @@ export default function AnomalyFeed() {
 			) : (
 				<ul className="flex max-h-[26rem] flex-col gap-1 overflow-y-auto">
 					{feed.map((t) => {
-						const tone = riskTone(t.riskScore);
+						// Fraud reads red; a false positive reads amber.
+						const tone = t.fraudPattern ? "alert" : "warn";
 						return (
 							<li
 								key={t.id}
@@ -45,8 +45,13 @@ export default function AnomalyFeed() {
 								>
 									{patternLabel(t.fraudPattern)}
 								</span>
-								<span className="font-mono text-xs text-ink tabular-nums">
+								<span className="text-right font-mono text-xs text-ink tabular-nums">
 									{formatLocalAmount(t.amountMinor, t.currency)}
+									{t.currency !== "USD" && (
+										<span className="block text-[9px] text-ink-dim">
+											≈ {formatUsdCompact(t.usdMinor)}
+										</span>
+									)}
 								</span>
 								<span className="font-mono text-xs font-semibold text-alert tabular-nums">
 									{t.riskScore.toFixed(2)}

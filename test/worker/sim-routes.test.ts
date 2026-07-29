@@ -41,6 +41,23 @@ describe("sim routes", () => {
 		expect((await app.request("/api/sim/kpis?from=0&to=240")).status).toBe(400);
 	});
 
+	it("rejects missing params, unsafe integers, and the far future", async () => {
+		expect((await app.request("/api/sim/buckets?from=&to=")).status).toBe(400);
+		expect((await app.request("/api/sim/buckets?to=5")).status).toBe(400);
+		// Near 2^53, b + 1 === b — this must never reach a bucket loop.
+		expect(
+			(
+				await app.request(
+					"/api/sim/kpis?from=9007199254740992&to=9007199254740992",
+				)
+			).status,
+		).toBe(400);
+		expect(
+			(await app.request("/api/sim/buckets?from=900000000&to=900000001"))
+				.status,
+		).toBe(400);
+	});
+
 	it("serves KPIs that match the engine exactly", async () => {
 		const res = await app.request("/api/sim/kpis?from=0&to=119");
 		expect(res.status).toBe(200);

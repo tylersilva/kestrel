@@ -80,6 +80,10 @@ export function useSimulation(clock: SimClock): void {
 				if (disposed) {
 					return;
 				}
+				if (bucket % BUCKETS_PER_DAY === 0) {
+					// UTC midnight: "today" resets for every viewer at once.
+					useSimStore.getState().resetDay();
+				}
 				emitBucket(bucket);
 				schedule(
 					() => fire(bucket + 1),
@@ -110,6 +114,10 @@ export function useSimulation(clock: SimClock): void {
 					.setSyncProgress((to - dayStart + 1) / (replayEnd - dayStart + 1));
 				await yieldToUi();
 			}
+			// Unconditional yield: guarantees at least one await point even
+			// when the replay range is empty (boot at exactly UTC midnight),
+			// so a StrictMode remount always disposes us before we account.
+			await yieldToUi();
 			if (disposed) {
 				return;
 			}
@@ -135,7 +143,9 @@ export function useSimulation(clock: SimClock): void {
 				emitBucket(b);
 			}
 			useSimStore.getState().setPhase("live");
-			startTicker(liveStart + 1);
+			// max() guards a backward wall-clock step during boot: never
+			// re-emit buckets the replay already accounted for.
+			startTicker(Math.max(bootBucket, liveStart + 1));
 		};
 
 		boot().catch(() => {
