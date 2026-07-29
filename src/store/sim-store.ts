@@ -14,7 +14,9 @@ import {
  */
 
 const FEED_CAP = 48;
-const RECENT_CAP = 24;
+// Sized so `recent` genuinely spans ~2 minutes of traffic (~20 txns per 5s
+// bucket) — the globe's hover tooltip counts a real time window over it.
+const RECENT_CAP = 500;
 const RISK_CAP = 120; // trailing 10 minutes
 
 export interface KpiTotals {

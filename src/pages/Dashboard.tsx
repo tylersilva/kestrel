@@ -1,6 +1,6 @@
 import AnomalyFeed from "../components/feed/AnomalyFeed.tsx";
-import CorridorBoard from "../components/feed/CorridorBoard.tsx";
 import RiskStream from "../components/feed/RiskStream.tsx";
+import GlobePanel from "../components/globe/GlobePanel.tsx";
 import KpiRow from "../components/kpi/KpiRow.tsx";
 
 export default function Dashboard() {
@@ -9,7 +9,7 @@ export default function Dashboard() {
 			<KpiRow />
 			<RiskStream />
 			<div className="grid gap-3 lg:grid-cols-[1.4fr_1fr]">
-				<CorridorBoard />
+				<GlobePanel />
 				<AnomalyFeed />
 			</div>
 		</div>
