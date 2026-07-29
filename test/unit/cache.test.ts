@@ -82,4 +82,38 @@ describe("memory cache", () => {
 		};
 		expect(await cached("k", 1000, fetcher, clockAt(0))).toBeNull();
 	});
+
+	it("dedupes concurrent misses into one upstream fetch", async () => {
+		let calls = 0;
+		let release: (v: ConditionalResult<string>) => void = () => {};
+		const gate = new Promise<ConditionalResult<string>>((resolve) => {
+			release = resolve;
+		});
+		const fetcher = async () => {
+			calls++;
+			return gate;
+		};
+		const p1 = cached("k", 1000, fetcher, clockAt(0));
+		const p2 = cached("k", 1000, fetcher, clockAt(0));
+		release({ status: 200, etag: null, body: "v1" });
+		const [a, b] = await Promise.all([p1, p2]);
+		expect(calls).toBe(1);
+		expect(a?.body).toBe("v1");
+		expect(b?.body).toBe("v1");
+	});
+
+	it("backs off after a failure instead of hammering the upstream", async () => {
+		let calls = 0;
+		const failing = async (): Promise<ConditionalResult<string>> => {
+			calls++;
+			throw new Error("down");
+		};
+		expect(await cached("k", 1000, failing, clockAt(0))).toBeNull();
+		// Within the 30s backoff window: no new upstream attempt.
+		expect(await cached("k", 1000, failing, clockAt(1_000))).toBeNull();
+		expect(calls).toBe(1);
+		// Past the window: one more attempt is allowed.
+		await cached("k", 1000, failing, clockAt(40_000));
+		expect(calls).toBe(2);
+	});
 });

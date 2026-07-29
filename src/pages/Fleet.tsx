@@ -108,7 +108,9 @@ function Velocity({ events }: { events: FleetEvent[] }) {
 		if (e.type !== "pr_merged") {
 			continue;
 		}
-		const day = new Date(e.ts).toISOString().slice(5, 10);
+		// Full ISO date — MM-DD alone would merge days across years and
+		// missort Dec→Jan. The axis formatter trims for display.
+		const day = new Date(e.ts).toISOString().slice(0, 10);
 		const row = byDay.get(day) ?? {
 			day,
 			planner: 0,
@@ -136,6 +138,7 @@ function Velocity({ events }: { events: FleetEvent[] }) {
 					>
 						<XAxis
 							dataKey="day"
+							tickFormatter={(d: string) => d.slice(5)}
 							tick={{ fill: "#8b98ad", fontSize: 10, fontFamily: "monospace" }}
 							axisLine={{ stroke: "#1a2233" }}
 							tickLine={false}
@@ -188,7 +191,9 @@ export default function Fleet() {
 		);
 	}
 
-	if (failed || !summary) {
+	// Only a page that never got data shows the error panel — a failed
+	// REFRESH degrades to a chip below, never blanks what we're holding.
+	if (!summary) {
 		return (
 			<div className="panel flex min-h-64 flex-col items-center justify-center gap-3 px-6 text-center">
 				<p className="font-mono text-sm text-ink">
@@ -212,11 +217,13 @@ export default function Fleet() {
 
 	return (
 		<div className="flex flex-col gap-3">
-			{meta && (meta.stale || !meta.authenticated) && (
+			{(failed || (meta && (meta.stale || !meta.authenticated))) && (
 				<p className="rounded border border-warn/40 bg-warn/10 px-3 py-1.5 font-mono text-[10px] tracking-[0.1em] text-warn uppercase">
-					{meta.stale
-						? "Showing cached data — GitHub refresh is delayed"
-						: "Unauthenticated GitHub access — refresh may be rate-limited"}
+					{failed
+						? "Refresh failed — showing the last good data"
+						: meta?.stale
+							? "Showing cached data — GitHub refresh is delayed"
+							: "Unauthenticated GitHub access — refresh may be rate-limited"}
 				</p>
 			)}
 

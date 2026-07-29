@@ -171,15 +171,18 @@ export function shapeActivity(
 		}
 	}
 	for (const commit of commits) {
+		// A missing git-author block means no usable timestamp — an epoch-0
+		// event would sort to the end and render as 00:00:00. Skip it.
+		if (!commit.commit.author) {
+			continue;
+		}
 		events.push({
 			type: "commit",
-			ts: commit.commit.author
-				? new Date(commit.commit.author.date).getTime()
-				: 0,
+			ts: new Date(commit.commit.author.date).getTime(),
 			title: commit.commit.message.split("\n")[0],
 			url: commit.html_url,
 			agents: [],
-			author: commit.commit.author?.name ?? "unknown",
+			author: commit.commit.author.name,
 		});
 	}
 	return events.sort((a, b) => b.ts - a.ts).slice(0, MAX_EVENTS);
