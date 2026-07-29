@@ -30,6 +30,10 @@ export function useGlobeStream(quality: QualityLevel): {
 
 	useEffect(() => {
 		const preset = QUALITY[quality];
+		// Re-cap immediately on a quality change — High→Low must not leave
+		// the old budget on screen until the next ingest.
+		setArcs((prev) => capArcs(prev, preset.arcCap));
+		setRings((prev) => prev.slice(-preset.ringCap));
 		const seen = new Set<string>();
 		// Seed with what's already on screen so a mount doesn't burst-render
 		// the whole backfill at once.

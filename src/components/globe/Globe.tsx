@@ -12,13 +12,22 @@ interface LandFeatures {
 	features: object[];
 }
 
-// Fetched once per session, shared across remounts.
+// Fetched once per session, shared across remounts. A failed fetch clears
+// the cache so the next mount retries instead of memoizing the failure.
 let landPromise: Promise<LandFeatures> | null = null;
 function loadLand(): Promise<LandFeatures> {
 	if (!landPromise) {
-		landPromise = fetch("/data/land-110m.json").then(
-			(r) => r.json() as Promise<LandFeatures>,
-		);
+		landPromise = fetch("/data/land-110m.json")
+			.then((r) => {
+				if (!r.ok) {
+					throw new Error(`land data ${r.status}`);
+				}
+				return r.json() as Promise<LandFeatures>;
+			})
+			.catch((err) => {
+				landPromise = null;
+				throw err;
+			});
 	}
 	return landPromise;
 }
@@ -37,26 +46,40 @@ const CITY_POINTS: CityPoint[] = CITIES.map((city) => ({
 	city,
 }));
 
+const TOOLTIP_WINDOW_MS = 120_000;
+
 function cityTooltip(point: object): string {
 	const { city } = point as CityPoint;
-	const perMin = useSimStore
-		.getState()
-		.recent.filter(
-			(t) => t.fromCity === city.id || t.toCity === city.id,
-		).length;
+	// Count a genuine 2-minute window, anchored to the stream's own
+	// timeline (no client-clock dependency).
+	const { recent } = useSimStore.getState();
+	const anchor = recent[0]?.ts ?? 0;
+	const count = recent.filter(
+		(t) =>
+			t.ts >= anchor - TOOLTIP_WINDOW_MS &&
+			(t.fromCity === city.id || t.toCity === city.id),
+	).length;
 	return `<div style="font-family: ui-monospace, monospace; font-size: 11px; background: #0b0f17; border: 1px solid #1a2233; border-radius: 4px; padding: 6px 8px; color: #e6edf7;">
-		${city.name}<span style="color:#8b98ad"> · ${perMin} txns in the last 2 min</span>
+		${city.name}<span style="color:#8b98ad"> · ${count} txns in the last 2 min</span>
 	</div>`;
 }
+
+// Stable accessor identities — new function props per render would trigger
+// a three-globe layer update on every arc-state change (~4x/sec).
+const HEX_COLOR = () => "rgba(139, 152, 173, 0.35)";
+const POINT_COLOR = () => "rgba(139, 152, 173, 0.85)";
+const RING_COLOR = () => (t: number) => `rgba(255, 77, 94, ${1 - t})`;
 
 export default function Globe({
 	quality,
 	width,
 	height,
+	onContextLost,
 }: {
 	quality: QualityLevel;
 	width: number;
 	height: number;
+	onContextLost: () => void;
 }) {
 	const globeRef = useRef<GlobeMethods | undefined>(undefined);
 	const { arcs, rings } = useGlobeStream(quality);
@@ -125,15 +148,25 @@ export default function Globe({
 		};
 		document.addEventListener("visibilitychange", onVisibility);
 
+		// Mid-session GPU resets degrade to the corridor board instead of
+		// freezing the panel.
+		const canvas = globe.renderer().domElement;
+		const onLost = (event: Event) => {
+			event.preventDefault();
+			onContextLost();
+		};
+		canvas.addEventListener("webglcontextlost", onLost);
+
 		return () => {
 			controls.removeEventListener("start", onInteractStart);
 			controls.removeEventListener("end", onInteractEnd);
 			document.removeEventListener("visibilitychange", onVisibility);
+			canvas.removeEventListener("webglcontextlost", onLost);
 			if (idleTimer) {
 				clearTimeout(idleTimer);
 			}
 		};
-	}, []);
+	}, [onContextLost]);
 
 	return (
 		<GlobeGL
@@ -148,13 +181,13 @@ export default function Globe({
 			hexPolygonsData={land ? land.features : []}
 			hexPolygonResolution={QUALITY[quality].hexResolution}
 			hexPolygonMargin={0.68}
-			hexPolygonColor={() => "rgba(139, 152, 173, 0.35)"}
+			hexPolygonColor={HEX_COLOR}
 			pointsData={CITY_POINTS}
 			pointLat="lat"
 			pointLng="lng"
 			pointRadius="radius"
 			pointAltitude={0.004}
-			pointColor={() => "rgba(139, 152, 173, 0.85)"}
+			pointColor={POINT_COLOR}
 			pointLabel={cityTooltip}
 			arcsData={arcs}
 			arcStartLat="startLat"
@@ -174,7 +207,7 @@ export default function Globe({
 			ringMaxRadius="maxRadius"
 			ringPropagationSpeed="speed"
 			ringRepeatPeriod={0}
-			ringColor={() => (t: number) => `rgba(255, 77, 94, ${1 - t})`}
+			ringColor={RING_COLOR}
 		/>
 	);
 }
