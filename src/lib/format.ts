@@ -54,6 +54,18 @@ export function formatPct(fraction: number): string {
 	return `${(fraction * 100).toFixed(1)}%`;
 }
 
+/** "2h 14m" / "38m" / "45s" from a duration in ms. */
+export function formatDurationShort(ms: number): string {
+	const minutes = Math.floor(ms / 60_000);
+	if (minutes < 1) {
+		return `${Math.round(ms / 1000)}s`;
+	}
+	if (minutes < 60) {
+		return `${minutes}m`;
+	}
+	return `${Math.floor(minutes / 60)}h ${String(minutes % 60).padStart(2, "0")}m`;
+}
+
 /** "Lagos ⇢ New York" */
 export function corridorLabel(fromCity: string, toCity: string): string {
 	return `${cityById(fromCity).name} ⇢ ${cityById(toCity).name}`;

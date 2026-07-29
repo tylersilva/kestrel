@@ -5,7 +5,11 @@
 		"lib": ["ES2023"],
 		"module": "esnext",
 		"moduleResolution": "bundler",
-		"types": ["@cloudflare/vitest-pool-workers", "./worker-configuration.d.ts"],
+		"types": [
+			"@cloudflare/vitest-pool-workers",
+			"./worker-configuration.d.ts",
+			"./worker/types.d.ts"
+		],
 		"skipLibCheck": true,
 		"allowImportingTsExtensions": true,
 		"verbatimModuleSyntax": true,

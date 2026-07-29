@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { secureHeaders } from "hono/secure-headers";
 import { ENGINE_VERSION } from "../sim/index.ts";
+import { fleetRoutes } from "./routes/fleet.ts";
 import { simRoutes } from "./routes/sim.ts";
 
 /**
@@ -16,6 +17,7 @@ app.get("/api/health", (c) =>
 );
 
 app.route("/api/sim", simRoutes);
+app.route("/api/fleet", fleetRoutes);
 
 app.notFound((c) =>
 	c.json({ error: { code: "not_found", message: "No such route" } }, 404),
