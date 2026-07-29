@@ -20,6 +20,8 @@ describe("kpi aggregation", () => {
 		expect(kpi.falsePositives).toBe(
 			txns.filter((t) => t.flagged && t.fraudPattern === null).length,
 		);
+		expect(kpi.episodesTotal).toBeGreaterThanOrEqual(1);
+		expect(kpi.episodesDetected).toBeLessThanOrEqual(kpi.episodesTotal);
 	});
 
 	it("keeps detection rates honest over an hour of world time", () => {
@@ -33,6 +35,9 @@ describe("kpi aggregation", () => {
 		// Per-txn catch rate: ramp phases miss by design, majority caught.
 		expect(kpi.fraudCaught / kpi.fraudCount).toBeGreaterThan(0.5);
 		expect(kpi.missedFraud / kpi.fraudCount).toBeLessThan(0.45);
+
+		// Episode-level detection — the headline metric.
+		expect(kpi.episodesDetected / kpi.episodesTotal).toBeGreaterThan(0.9);
 	});
 
 	it("replays a full simulated day fast enough for page load", () => {
@@ -41,7 +46,7 @@ describe("kpi aggregation", () => {
 		const elapsed = performance.now() - start;
 
 		expect(kpi.txnCount).toBeGreaterThan(100_000);
-		// Generous CI budget; locally this runs in ~600ms.
-		expect(elapsed).toBeLessThan(3_000);
+		// Acceptance criterion: < 1.5s in CI. Locally ~600ms.
+		expect(elapsed).toBeLessThan(1_500);
 	});
 });

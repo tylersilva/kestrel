@@ -1,6 +1,6 @@
 import { generateBaseline } from "./baseline.ts";
 import { ACT_BUCKETS } from "./constants.ts";
-import { episodesForAct } from "./episodes.ts";
+import { episodesForAct, patternDuration } from "./episodes.ts";
 import * as accountTakeover from "./patterns/account-takeover.ts";
 import * as cardTesting from "./patterns/card-testing.ts";
 import * as muleFanout from "./patterns/mule-fanout.ts";
@@ -31,15 +31,21 @@ const PATTERNS: Readonly<Record<FraudPatternId, Pattern>> = {
 	structuring,
 };
 
-export function patternDuration(pattern: FraudPatternId): number {
-	return PATTERNS[pattern].DURATION;
-}
-
 function isActive(spec: EpisodeSpec, bucketIndex: number): boolean {
 	return (
 		bucketIndex >= spec.startBucket &&
-		bucketIndex < spec.startBucket + PATTERNS[spec.pattern].DURATION
+		bucketIndex < spec.startBucket + patternDuration(spec.pattern)
 	);
+}
+
+/** Every transaction one episode emits over its full run (drafts, no ids). */
+export function episodeTransactions(spec: EpisodeSpec): TxnDraft[] {
+	const out: TxnDraft[] = [];
+	const end = spec.startBucket + patternDuration(spec.pattern);
+	for (let b = spec.startBucket; b < end; b++) {
+		out.push(...PATTERNS[spec.pattern].emit(spec, b));
+	}
+	return out;
 }
 
 export function generateBucket(
@@ -60,7 +66,7 @@ export function generateBucket(
 		...draft,
 		id: `${bucketHex}-${combine(idBase, i).toString(16).padStart(8, "0")}`,
 	}));
-	txns.sort((a, b) => a.ts - b.ts || (a.id < b.id ? -1 : 1));
+	txns.sort((a, b) => a.ts - b.ts || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 	return txns;
 }
 

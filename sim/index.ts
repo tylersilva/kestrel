@@ -22,8 +22,12 @@ export {
 	GLOBAL_SEED,
 	minuteOfDayUtc,
 } from "./constants.ts";
-export { generateBucket, patternDuration, simulateRange } from "./engine.ts";
-export { episodesForAct } from "./episodes.ts";
+export {
+	episodeTransactions,
+	generateBucket,
+	simulateRange,
+} from "./engine.ts";
+export { episodesForAct, patternDuration } from "./episodes.ts";
 export { FX, localize } from "./fx.ts";
 export { aggregateRange } from "./kpi.ts";
 export {

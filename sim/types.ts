@@ -60,8 +60,21 @@ export interface KpiSnapshot {
 	readonly fraudCaughtUsdMinor: number;
 	/** Legitimate transactions incorrectly flagged. */
 	readonly falsePositives: number;
-	/** Fraud transactions that slipped under the threshold. */
+	/**
+	 * Fraud transactions under the threshold. Includes the designed early
+	 * ramp of each episode (structuring's first wires, a burst's first
+	 * charges) — per-txn misses are honest, not tuned away. The headline
+	 * detection metric is episode-level, below.
+	 */
 	readonly missedFraud: number;
+	/** Fraud episodes whose start falls inside the range. */
+	readonly episodesTotal: number;
+	/**
+	 * Episodes with ≥1 flagged transaction over their full run — the
+	 * "fraud events detected" headline (~95%+; an episode is caught once
+	 * any of its transactions trips the threshold).
+	 */
+	readonly episodesDetected: number;
 }
 
 /** The detection threshold: riskScore >= FLAG_THRESHOLD ⇒ flagged. */

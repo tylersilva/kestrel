@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { cityById } from "../../sim/cities.ts";
 import { GLOBAL_SEED } from "../../sim/constants.ts";
-import { patternDuration } from "../../sim/engine.ts";
-import { episodesForAct } from "../../sim/episodes.ts";
+import { episodesForAct, patternDuration } from "../../sim/episodes.ts";
 import * as accountTakeover from "../../sim/patterns/account-takeover.ts";
 import * as cardTesting from "../../sim/patterns/card-testing.ts";
 import * as muleFanout from "../../sim/patterns/mule-fanout.ts";
@@ -54,6 +54,18 @@ describe("episode scheduler", () => {
 		expect(
 			[0, 1, 2].map((act) => episodesForAct(GLOBAL_SEED, act)),
 		).toMatchSnapshot();
+	});
+
+	it("keeps structuring strictly cross-currency (cross-border proxy)", () => {
+		for (let act = 0; act < 300; act++) {
+			for (const ep of episodesForAct(GLOBAL_SEED, act)) {
+				if (ep.pattern === "structuring") {
+					expect(cityById(ep.originCity).currency).not.toBe(
+						cityById(ep.targetCity).currency,
+					);
+				}
+			}
+		}
 	});
 });
 

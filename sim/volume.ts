@@ -37,7 +37,7 @@ export function worldActivity(minuteUtc: number): number {
 }
 
 /**
- * Baseline transaction target for a bucket: 8..20 txns depending on where
+ * Baseline transaction target for a bucket: ~12..21 txns depending on where
  * the sun is. (Jitter is applied by the caller from its own rng stream.)
  */
 export function bucketTxnTarget(minuteUtc: number): number {

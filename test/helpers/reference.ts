@@ -4,7 +4,7 @@
  * by extension, every browser). If an intentional engine change breaks them,
  * bump ENGINE_VERSION and regenerate via:
  *
- *   node --input-type=module -e "import('./test/helpers/regen.ts')" (see repo docs)
+ *   node test/helpers/regen.ts
  */
 
 export function fnv1a(str: string): string {
@@ -21,10 +21,10 @@ export const REFERENCE = {
 	bucket12345: "5132d7cd",
 	/** A 2026-era bucket (follow-the-sun at a different world clock). */
 	bucket357056640: "b95c6b9f",
-	/** Bucket with active fraud episodes (account_takeover + card_testing). */
-	bucket51: "b96ce0f2",
+	/** Bucket with active fraud episodes. */
+	bucket51: "9e10236f",
 	/** Episode schedule for a far-future act. */
-	episodesAct2975472: "800bf659",
+	episodesAct2975472: "ddac056f",
 	/** Full KPI aggregation over act 0 (buckets 0..119). */
-	kpiAct0: "7ce0bc2c",
+	kpiAct0: "ba101936",
 } as const;
