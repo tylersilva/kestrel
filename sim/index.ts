@@ -1,9 +1,11 @@
 /**
- * Kestrel simulation engine — public contract.
+ * Kestrel simulation engine — public API.
  *
  * Purity rules for everything under sim/:
  * - Zero dependencies. No DOM, no Workers APIs, no Node APIs.
  * - Never read the clock (no Date.now()) — callers pass time in.
+ * - No transcendental math (log/exp/sin/cos/pow) — engines differ in the
+ *   last ulp and the world must be bit-identical everywhere.
  * - All generation is a pure function of (GLOBAL_SEED, bucketIndex), so the
  *   browser and the Worker compute the identical world.
  *
@@ -11,11 +13,30 @@
  * and the Worker must agree on the stream, and snapshot tests lock it.
  */
 
-export const GLOBAL_SEED = 0xfa1c0;
-export const BUCKET_MS = 5000;
-export const ENGINE_VERSION = "0.1.0";
-
-/** The world-time bucket a given unix-ms timestamp falls in. */
-export function bucketIndexFor(unixMs: number): number {
-	return Math.floor(unixMs / BUCKET_MS);
-}
+export { CITIES, type City, cityById, type Region } from "./cities.ts";
+export {
+	ACT_BUCKETS,
+	BUCKET_MS,
+	bucketIndexFor,
+	ENGINE_VERSION,
+	GLOBAL_SEED,
+	minuteOfDayUtc,
+} from "./constants.ts";
+export {
+	episodeTransactions,
+	generateBucket,
+	simulateRange,
+} from "./engine.ts";
+export { episodesForAct, patternDuration } from "./episodes.ts";
+export { FX, localize } from "./fx.ts";
+export { aggregateRange } from "./kpi.ts";
+export {
+	type Channel,
+	type EpisodeSpec,
+	FLAG_THRESHOLD,
+	type FraudPatternId,
+	type KpiSnapshot,
+	type Transaction,
+	type TxnDraft,
+} from "./types.ts";
+export { bucketTxnTarget, cityActivity, worldActivity } from "./volume.ts";
