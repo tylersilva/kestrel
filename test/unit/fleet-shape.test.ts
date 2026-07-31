@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
+import type { FleetEvent } from "../../worker/lib/fleet-shape.ts";
 import {
+	AGENT_ROLES,
 	agentLabels,
 	shapeActivity,
 	shapePrBoard,
 	shapeSummary,
+	shapeVelocity,
 } from "../../worker/lib/fleet-shape.ts";
 import type { GhCommit, GhIssue, GhPull } from "../../worker/lib/github.ts";
 
@@ -91,6 +94,21 @@ const COMMITS: GhCommit[] = [
 	},
 ];
 
+/** Builds a minimal FleetEvent fixture, defaulting to a merged-PR shape. */
+function mkEvent(
+	overrides: Omit<Partial<FleetEvent>, "ts"> & { ts: string },
+): FleetEvent {
+	return {
+		type: "pr_merged",
+		title: "feat: something",
+		url: "https://github.com/x/9",
+		agents: [],
+		author: "tylersilva",
+		...overrides,
+		ts: new Date(overrides.ts).getTime(),
+	};
+}
+
 describe("fleet shaping", () => {
 	it("parses agent labels, ignoring unknown ones", () => {
 		expect(
@@ -138,5 +156,101 @@ describe("fleet shaping", () => {
 			(e) => e.type === "commit" && e.author === "Claude",
 		);
 		expect(commit?.title).toBe("Add engine"); // first line only
+	});
+
+	// Regression lock for the planner's spot-check (issue #9): shapeSummary's
+	// per-role tally iterates agentLabels()'s result, so an empty array is
+	// already a correct zero-iteration no-op. This pins that down so it can't
+	// silently regress alongside the shapeVelocity fix below.
+	it("does not credit an unlabeled merged PR to any role in shapeSummary", () => {
+		const unlabeledMerged: GhPull[] = [
+			{
+				number: 42,
+				title: "fix: something",
+				state: "closed",
+				created_at: "2026-07-30T00:00:00Z",
+				merged_at: "2026-07-30T01:00:00Z",
+				labels: [],
+				user: { login: "tylersilva" },
+				html_url: "https://github.com/x/42",
+				draft: false,
+			},
+		];
+		const s = shapeSummary(unlabeledMerged, [], []);
+		expect(s.mergedPrs).toBe(1);
+		expect(s.agents).toEqual({
+			planner: 0,
+			builder: 0,
+			reviewer: 0,
+			tester: 0,
+		});
+		expect(s.activeAgents).toBe(0);
+	});
+});
+
+describe("shapeVelocity", () => {
+	it("excludes a merged PR with no agent:* label entirely", () => {
+		const events = [mkEvent({ ts: "2026-07-29T01:00:00Z", agents: [] })];
+		expect(shapeVelocity(events)).toEqual([]);
+	});
+
+	it("still counts a merged PR with a genuine role label", () => {
+		const events = [
+			mkEvent({ ts: "2026-07-29T01:00:00Z", agents: ["builder"] }),
+		];
+		expect(shapeVelocity(events)).toEqual([
+			{ day: "2026-07-29", planner: 0, builder: 1, reviewer: 0, tester: 0 },
+		]);
+	});
+
+	it("counts a different role label correctly too", () => {
+		const events = [
+			mkEvent({ ts: "2026-07-29T01:00:00Z", agents: ["reviewer"] }),
+		];
+		expect(shapeVelocity(events)).toEqual([
+			{ day: "2026-07-29", planner: 0, builder: 0, reviewer: 1, tester: 0 },
+		]);
+	});
+
+	it("on a mixed same day, credits only the labeled merge — not both, not double", () => {
+		const events = [
+			mkEvent({ ts: "2026-07-29T01:00:00Z", agents: ["builder"] }),
+			mkEvent({ ts: "2026-07-29T05:00:00Z", agents: [] }),
+		];
+		const rows = shapeVelocity(events);
+		expect(rows).toHaveLength(1);
+		const row = rows[0];
+		expect(row).toEqual({
+			day: "2026-07-29",
+			planner: 0,
+			builder: 1,
+			reviewer: 0,
+			tester: 0,
+		});
+		// Total across all role columns is 1, not 2 — the unlabeled merge
+		// contributed nothing.
+		const total = AGENT_ROLES.reduce((sum, role) => sum + row[role], 0);
+		expect(total).toBe(1);
+	});
+
+	it("ignores non-pr_merged events regardless of their agents field", () => {
+		const events: FleetEvent[] = [
+			mkEvent({
+				type: "issue_opened",
+				ts: "2026-07-29T01:00:00Z",
+				agents: ["builder"],
+			}),
+			mkEvent({
+				type: "pr_opened",
+				ts: "2026-07-29T02:00:00Z",
+				agents: ["builder"],
+			}),
+			mkEvent({
+				type: "commit",
+				ts: "2026-07-29T03:00:00Z",
+				agents: ["builder"],
+			}),
+		];
+		expect(shapeVelocity(events)).toEqual([]);
 	});
 });
