@@ -130,6 +130,40 @@ export function shapePrBoard(
 	}));
 }
 
+export interface VelocityRow {
+	readonly day: string;
+	readonly planner: number;
+	readonly builder: number;
+	readonly reviewer: number;
+	readonly tester: number;
+}
+
+export function shapeVelocity(events: readonly FleetEvent[]): VelocityRow[] {
+	const byDay = new Map<string, VelocityRow>();
+	for (const e of events) {
+		if (e.type !== "pr_merged") {
+			continue;
+		}
+		const role = e.agents[0];
+		if (!role) {
+			// No agent:* label — invisible to the chart, per CLAUDE.md.
+			continue;
+		}
+		// Full ISO date — MM-DD alone would merge days across years and
+		// missort Dec→Jan. The axis formatter trims for display.
+		const day = new Date(e.ts).toISOString().slice(0, 10);
+		const row = byDay.get(day) ?? {
+			day,
+			planner: 0,
+			builder: 0,
+			reviewer: 0,
+			tester: 0,
+		};
+		byDay.set(day, { ...row, [role]: row[role] + 1 });
+	}
+	return [...byDay.values()].sort((a, b) => (a.day < b.day ? -1 : 1));
+}
+
 export function shapeActivity(
 	pulls: readonly GhPull[],
 	issues: readonly GhIssue[],
