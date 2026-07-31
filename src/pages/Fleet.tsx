@@ -7,6 +7,7 @@ import {
 	YAxis,
 } from "recharts";
 import type { AgentRole, FleetEvent } from "../../worker/lib/fleet-shape.ts";
+import { shapeVelocity } from "../../worker/lib/fleet-shape.ts";
 import { useFleetData } from "../hooks/useFleetData.ts";
 import { formatDurationShort, formatUtcTime } from "../lib/format.ts";
 
@@ -103,28 +104,7 @@ function Swimlanes({ events }: { events: FleetEvent[] }) {
 }
 
 function Velocity({ events }: { events: FleetEvent[] }) {
-	const byDay = new Map<string, Record<string, number | string>>();
-	for (const e of events) {
-		if (e.type !== "pr_merged") {
-			continue;
-		}
-		// Full ISO date — MM-DD alone would merge days across years and
-		// missort Dec→Jan. The axis formatter trims for display.
-		const day = new Date(e.ts).toISOString().slice(0, 10);
-		const row = byDay.get(day) ?? {
-			day,
-			planner: 0,
-			builder: 0,
-			reviewer: 0,
-			tester: 0,
-		};
-		const role = e.agents[0] ?? "builder";
-		row[role] = (row[role] as number) + 1;
-		byDay.set(day, row);
-	}
-	const data = [...byDay.values()].sort((a, b) =>
-		String(a.day) < String(b.day) ? -1 : 1,
-	);
+	const data = shapeVelocity(events);
 	return (
 		<section className="panel px-4 py-3">
 			<h2 className="mb-3 font-mono text-[10px] tracking-[0.25em] text-ink-dim uppercase">
