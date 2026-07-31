@@ -39,7 +39,9 @@ Kestrel is also a showcase of agentic development: after the initial scaffold, e
 2. **builder** implements one scoped task on a feature branch.
 3. **tester** extends tests (determinism tests are sacred — same seed ⇒ same world).
 4. **reviewer** adversarially verifies against the issue's acceptance criteria.
-5. PR opens → CI + preview URL auto-comment → merge → auto-deploy to workers.dev → `/fleet` records the event.
+5. PR opens → CI + preview URL auto-comment.
+6. **Human review (final gate).** Once every subagent above is done — issue has planner's notes, PR has the diff, CI + tests are green — a human reads it all and decides whether to merge. This is a pause for a go/no-go call, not another round of design or implementation; the agents already did that work.
+7. Merge to main → auto-deploy to production Cloudflare (workers.dev) → `/fleet` records the event.
 
 ## Demo runbook (live sessions)
 
